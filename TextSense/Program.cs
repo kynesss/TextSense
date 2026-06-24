@@ -13,6 +13,8 @@ builder.Services.Configure<OpenAiOptions>(
     builder.Configuration.GetSection(OpenAiOptions.SectionName));
 builder.Services.Configure<AzureLanguageOptions>(
     builder.Configuration.GetSection(AzureLanguageOptions.SectionName));
+builder.Services.Configure<PromptOptions>(
+    builder.Configuration.GetSection(PromptOptions.SectionName));
 
 builder.Services.AddHttpClient(OpenAiTextGenerationService.HttpClientName, (sp, client) =>
 {
@@ -33,6 +35,7 @@ builder.Services.AddHttpClient(AzureTextAnalysisService.HttpClientName, (sp, cli
 
 builder.Services.AddScoped<ITextGenerationService, OpenAiTextGenerationService>();
 builder.Services.AddScoped<ITextAnalysisService, AzureTextAnalysisService>();
+builder.Services.AddSingleton<IPromptLibrary, PromptLibrary>();
 
 var app = builder.Build();
 
