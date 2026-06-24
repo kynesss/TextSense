@@ -2,7 +2,6 @@ using System.Text.Json.Serialization;
 
 namespace TextSense.Models.OpenAi;
 
-/// <summary>Request body for the OpenAI chat completions endpoint.</summary>
 public sealed record ChatCompletionRequest
 {
     [JsonPropertyName("model")]

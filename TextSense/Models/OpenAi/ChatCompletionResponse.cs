@@ -2,7 +2,6 @@ using System.Text.Json.Serialization;
 
 namespace TextSense.Models.OpenAi;
 
-/// <summary>Response returned by the OpenAI chat completions endpoint.</summary>
 public sealed record ChatCompletionResponse
 {
     [JsonPropertyName("choices")]
@@ -12,7 +11,6 @@ public sealed record ChatCompletionResponse
     public ChatUsage? Usage { get; init; }
 }
 
-/// <summary>A single generated choice.</summary>
 public sealed record ChatChoice
 {
     [JsonPropertyName("message")]
@@ -22,7 +20,6 @@ public sealed record ChatChoice
     public string? FinishReason { get; init; }
 }
 
-/// <summary>Token usage reported for the request.</summary>
 public sealed record ChatUsage
 {
     [JsonPropertyName("prompt_tokens")]
