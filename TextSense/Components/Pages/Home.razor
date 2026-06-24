@@ -1,7 +1,38 @@
-﻿@page "/"
+@page "/"
 
-<PageTitle>Home</PageTitle>
+<PageTitle>TextSense · AI text generation & analysis</PageTitle>
 
-<h1>Hello, world!</h1>
+<section class="hero">
+    <span class="hero__eyebrow">OpenAI × Azure AI Language</span>
+    <h1 class="hero__title">TextSense</h1>
+    <p class="hero__lead">
+        Generate text with an OpenAI chat model, then instantly analyze its sentiment
+        and key phrases with Azure AI Language — all in a single, clean Blazor workflow.
+    </p>
 
-Welcome to your new app.
+    <a class="hero__cta" href="playground">Open the AI Playground</a>
+
+    <div class="features">
+        <article class="feature">
+            <h2 class="feature__title">Generate</h2>
+            <p class="feature__text">
+                Pick a model, start from a sample prompt or write your own,
+                and get a completion from the OpenAI chat API.
+            </p>
+        </article>
+        <article class="feature">
+            <h2 class="feature__title">Analyze</h2>
+            <p class="feature__text">
+                The generated text is scored for sentiment with confidence
+                breakdowns and distilled into key phrases.
+            </p>
+        </article>
+        <article class="feature">
+            <h2 class="feature__title">Clean architecture</h2>
+            <p class="feature__text">
+                Typed configuration, injectable services and a strict result
+                type keep the UI thin and the integrations testable.
+            </p>
+        </article>
+    </div>
+</section>

@@ -1,15 +1,22 @@
 html, body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: 'Inter', 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background-color: #f7f7fb;
 }
 
 a, .btn-link {
-    color: #006bb7;
+    color: #4f46e5;
 }
 
 .btn-primary {
     color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+    background-color: #6366f1;
+    border-color: #4f46e5;
+}
+
+.app-tagline {
+    color: #6b7280;
+    font-size: 0.85rem;
+    font-weight: 500;
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
