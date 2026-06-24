@@ -1,0 +1,216 @@
+@page "/playground"
+@rendermode InteractiveServer
+@using Microsoft.Extensions.Options
+@using TextSense.Configuration
+@using TextSense.Services
+@inject ITextGenerationService TextGeneration
+@inject ITextAnalysisService TextAnalysis
+@inject IPromptLibrary PromptLibrary
+@inject IOptions<OpenAiOptions> OpenAiOptions
+
+<PageTitle>AI Playground · TextSense</PageTitle>
+
+<section class="playground">
+    <header class="playground__intro">
+        <h1>AI Playground</h1>
+        <p>Generate text with an OpenAI model, then analyze its sentiment and key phrases with Azure AI Language — in one pass.</p>
+    </header>
+
+    <div class="card-surface">
+        <div class="field">
+            <label for="samplePrompt">Sample prompt</label>
+            <select id="samplePrompt" class="control" @onchange="OnSamplePromptSelected">
+                <option value="">— Pick a starter prompt —</option>
+                @foreach (var prompt in _samplePrompts)
+                {
+                    <option value="@prompt">@prompt</option>
+                }
+            </select>
+        </div>
+
+        <div class="field">
+            <label for="model">Model</label>
+            <select id="model" class="control control--compact" @bind="_selectedModel">
+                @foreach (var model in _models)
+                {
+                    <option value="@model">@model</option>
+                }
+            </select>
+        </div>
+
+        <div class="field">
+            <label for="prompt">Your prompt</label>
+            <textarea id="prompt" class="control" rows="4" placeholder="Type a prompt or pick one above…"
+                      @bind="_userPrompt" @bind:event="oninput"></textarea>
+        </div>
+
+        <button class="btn-primary" @onclick="GenerateAsync" disabled="@(_isLoading || string.IsNullOrWhiteSpace(_userPrompt))">
+            @if (_isLoading)
+            {
+                <span class="spinner"></span>
+                <span>Working…</span>
+            }
+            else
+            {
+                <span>Generate &amp; analyze</span>
+            }
+        </button>
+    </div>
+
+    @if (_errorMessage is not null)
+    {
+        <div class="alert" role="alert">@_errorMessage</div>
+    }
+
+    @if (_generatedText is not null)
+    {
+        <div class="results">
+            <article class="card-surface result">
+                <h2 class="result__title">Generated text</h2>
+                <p class="result__body">@_generatedText</p>
+            </article>
+
+            @if (_analysis is not null)
+            {
+                <article class="card-surface result">
+                    <h2 class="result__title">Analysis</h2>
+
+                    <div class="analysis__row">
+                        <span class="analysis__label">Sentiment</span>
+                        <span class="badge badge--@SentimentClass(_analysis.Sentiment)">@_analysis.Sentiment</span>
+                    </div>
+
+                    @if (_analysis.Scores is { } scores)
+                    {
+                        <div class="scores">
+                            @RenderScore("Positive", scores.Positive, "positive")
+                            @RenderScore("Neutral", scores.Neutral, "neutral")
+                            @RenderScore("Negative", scores.Negative, "negative")
+                        </div>
+                    }
+
+                    <div class="analysis__row analysis__row--top">
+                        <span class="analysis__label">Key phrases</span>
+                        @if (_analysis.KeyPhrases.Count == 0)
+                        {
+                            <span class="muted">None detected</span>
+                        }
+                        else
+                        {
+                            <div class="pills">
+                                @foreach (var phrase in _analysis.KeyPhrases)
+                                {
+                                    <span class="pill">@phrase</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                </article>
+            }
+            else if (_analysisError is not null)
+            {
+                <div class="alert alert--soft" role="alert">@_analysisError</div>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    private IReadOnlyList<string> _samplePrompts = [];
+    private IReadOnlyList<string> _models = [];
+    private string _selectedModel = string.Empty;
+
+    private string _userPrompt = string.Empty;
+    private bool _isLoading;
+
+    private string? _generatedText;
+    private TextAnalysis? _analysis;
+    private string? _errorMessage;
+    private string? _analysisError;
+
+    protected override void OnInitialized()
+    {
+        _samplePrompts = PromptLibrary.GetSamplePrompts();
+        _models = OpenAiOptions.Value.AvailableModels;
+        _selectedModel = OpenAiOptions.Value.DefaultModel;
+    }
+
+    private void OnSamplePromptSelected(ChangeEventArgs e)
+    {
+        var selected = e.Value?.ToString();
+        if (!string.IsNullOrWhiteSpace(selected))
+        {
+            _userPrompt = selected;
+        }
+    }
+
+    private async Task GenerateAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_userPrompt))
+            return;
+
+        _isLoading = true;
+        _generatedText = null;
+        _analysis = null;
+        _errorMessage = null;
+        _analysisError = null;
+
+        var generation = await TextGeneration.GenerateAsync(_userPrompt, _selectedModel);
+        if (!generation.IsSuccess)
+        {
+            _errorMessage = generation.Error;
+            _isLoading = false;
+            return;
+        }
+
+        _generatedText = generation.Value;
+
+        var analysis = await TextAnalysis.AnalyzeAsync(_generatedText!);
+        if (analysis.IsSuccess)
+        {
+            _analysis = analysis.Value;
+        }
+        else
+        {
+            _analysisError = analysis.Error;
+        }
+
+        _isLoading = false;
+    }
+
+    private static string SentimentClass(string sentiment) => sentiment.ToLowerInvariant() switch
+    {
+        "positive" => "positive",
+        "negative" => "negative",
+        "neutral" => "neutral",
+        "mixed" => "mixed",
+        _ => "unknown"
+    };
+
+    private RenderFragment RenderScore(string label, double value, string variant) => builder =>
+    {
+        var percent = (int)Math.Round(value * 100);
+        builder.OpenElement(0, "div");
+        builder.AddAttribute(1, "class", "score");
+
+        builder.OpenElement(2, "span");
+        builder.AddAttribute(3, "class", "score__label");
+        builder.AddContent(4, label);
+        builder.CloseElement();
+
+        builder.OpenElement(5, "div");
+        builder.AddAttribute(6, "class", "score__track");
+        builder.OpenElement(7, "div");
+        builder.AddAttribute(8, "class", $"score__fill score__fill--{variant}");
+        builder.AddAttribute(9, "style", $"width:{percent}%");
+        builder.CloseElement();
+        builder.CloseElement();
+
+        builder.OpenElement(10, "span");
+        builder.AddAttribute(11, "class", "score__value");
+        builder.AddContent(12, $"{percent}%");
+        builder.CloseElement();
+
+        builder.CloseElement();
+    };
+}
